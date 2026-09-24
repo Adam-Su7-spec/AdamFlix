@@ -1,0 +1,94 @@
+@using AdamFlix.Models
+@using AdamFlix.Services
+@inject IVideoParserService VideoParser
+@inject HttpClient Http
+
+<div class="bg-[#101521] border border-[#1E2638] rounded-2xl p-6 text-white text-xs space-y-4">
+    <div class="flex items-center justify-between border-b border-[#1E2638] pb-3">
+        <h3 class="text-base font-bold text-white">Add New Movie to AdamFlix</h3>
+        <span class="text-[11px] font-mono text-[#00D4FF] bg-[#00D4FF]/10 px-2 py-0.5 rounded">4K UHD Cinema Engine</span>
+    </div>
+
+    <div>
+        <label class="block text-[#A7AFBF] mb-1">Movie Title</label>
+        <input @bind="MovieDto.Title" class="w-full bg-[#151B28] text-white p-2.5 rounded-xl border border-[#1E2638]" placeholder="e.g. The Quantum Horizon" />
+    </div>
+
+    <div>
+        <div class="flex items-center justify-between mb-1">
+            <label class="text-[#A7AFBF]">Video Stream Source (.mp4, .m3u8, streaming server, or &lt;iframe&gt;)</label>
+            @if (!string.IsNullOrEmpty(MovieDto.VideoSource))
+            {
+                <button type="button" @onclick="() => ShowPreview = !ShowPreview" class="text-[#00D4FF] hover:underline font-semibold">
+                    @(ShowPreview ? "Hide Preview" : "Test & Preview Stream")
+                </button>
+            }
+        </div>
+
+        <textarea @bind="MovieDto.VideoSource"
+                  @bind:after="OnVideoSourceChanged"
+                  rows="2"
+                  placeholder="Paste direct video URL (.mp4, .m3u8) or iframe embed code"
+                  class="w-full bg-[#151B28] font-mono text-white p-2.5 rounded-xl border border-[#1E2638] focus:border-[#7C5CFF]"></textarea>
+
+        @if (!string.IsNullOrEmpty(MovieDto.VideoSource))
+        {
+            <div class="mt-1.5 flex items-center gap-2">
+                <span class="text-[10px] text-[#A7AFBF]">Detected Format:</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#7C5CFF]/20 border border-[#7C5CFF]/30 text-[#7C5CFF] font-semibold">
+                    @CurrentAnalysis.DetectedPlatform
+                </span>
+                @if (CurrentAnalysis.IsIframe)
+                {
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Cinema Iframe Embed
+                    </span>
+                }
+            </div>
+        }
+
+        @if (ShowPreview && !string.IsNullOrEmpty(MovieDto.VideoSource))
+        {
+            <div class="mt-3 p-3 rounded-2xl bg-black border border-[#1E2638]">
+                <VideoPlayer SourceUrl="@MovieDto.VideoSource" Poster="@MovieDto.Backdrop" Title="@MovieDto.Title" />
+            </div>
+        }
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <label class="block text-[#A7AFBF] mb-1">Duration</label>
+            <input @bind="MovieDto.Duration" class="w-full bg-[#151B28] text-white p-2 rounded-xl border border-[#1E2638]" placeholder="2h 15m" />
+        </div>
+        <div>
+            <label class="block text-[#A7AFBF] mb-1">Quality</label>
+            <select @bind="MovieDto.Quality" class="w-full bg-[#151B28] text-white p-2 rounded-xl border border-[#1E2638]">
+                <option value="4K">4K Ultra HD</option>
+                <option value="FHD">Full HD 1080p</option>
+                <option value="HD">HD 720p</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="button"
+            @onclick="SaveMovie"
+            class="w-full py-3 rounded-xl bg-gradient-to-r from-[#7C5CFF] to-[#3B2896] text-white font-bold hover:brightness-110">
+        Save Movie to Catalog
+    </button>
+</div>
+
+@code {
+    private CreateMovieDto MovieDto = new() { ReleaseYear = 2026, Quality = "4K", Duration = "2h 15m" };
+    private VideoSourceAnalysis CurrentAnalysis = new();
+    private bool ShowPreview = false;
+
+    private void OnVideoSourceChanged()
+    {
+        CurrentAnalysis = VideoParser.ParseSource(MovieDto.VideoSource);
+    }
+
+    private async Task SaveMovie()
+    {
+        await Http.PostAsJsonAsync("api/movies", MovieDto);
+    }
+}

@@ -1,0 +1,124 @@
+@using AdamFlix.Models
+@inject HttpClient Http
+
+@if (IsOpen)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+        <div class="bg-[#0B0F19] border border-[#1E2638] rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl overflow-hidden">
+            <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#7C5CFF] via-[#00D4FF] to-[#7C5CFF]"></div>
+
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7C5CFF]/15 border border-[#7C5CFF]/30 text-[#00D4FF] text-xs font-mono font-bold tracking-wider uppercase mb-3">
+                    Strict Gmail Verification Required
+                </div>
+                <h2 class="text-2xl font-extrabold text-white font-display">Activate Your Account</h2>
+                <p class="text-xs text-[#A7AFBF] mt-2 leading-relaxed">
+                    A 6-digit security code has been dispatched to your official Google account at 
+                    <span class="text-white font-mono font-bold">@UserEmail</span>.
+                </p>
+            </div>
+
+            <div class="my-6">
+                <div class="flex items-center justify-center gap-2 sm:gap-3">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        var index = i;
+                        <input type="text"
+                               inputmode="numeric"
+                               maxlength="1"
+                               value="@Digits[index]"
+                               @oninput="(e) => OnDigitInput(index, e.Value?.ToString())"
+                               class="w-11 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-mono font-bold rounded-2xl border transition-all focus:outline-none bg-[#121826] border-[#1E2638] text-white focus:border-[#00D4FF]" />
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="mt-4 text-center text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 py-2 px-3 rounded-xl">
+                        @ErrorMessage
+                    </div>
+                }
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-[#A7AFBF] px-1 mb-6">
+                <span>Code expires in: <strong class="text-white">@FormatCountdown()</strong></span>
+                <button type="button" @onclick="HandleResend" class="text-[#00D4FF] hover:underline font-semibold">
+                    Resend Code
+                </button>
+            </div>
+
+            <button type="button"
+                    @onclick="VerifyCode"
+                    disabled="@(IsVerifying || string.Join("", Digits).Length != 6)"
+                    class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#7C5CFF] to-[#00D4FF] text-white font-bold text-sm shadow-xl hover:brightness-110 disabled:opacity-50">
+                @(IsVerifying ? "Verifying..." : "Verify Code & Activate Account")
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public string UserEmail { get; set; } = "";
+    [Parameter] public EventCallback<User> OnVerificationCompleted { get; set; }
+
+    private string[] Digits = new string[6] { "", "", "", "", "", "" };
+    private string ErrorMessage = "";
+    private bool IsVerifying = false;
+    private int SecondsLeft = 600;
+
+    private void OnDigitInput(int index, string? val)
+    {
+        ErrorMessage = "";
+        if (!string.IsNullOrEmpty(val))
+        {
+            Digits[index] = val.Substring(val.Length - 1);
+            if (string.Join("", Digits).Length == 6)
+            {
+                _ = VerifyCode();
+            }
+        }
+        else
+        {
+            Digits[index] = "";
+        }
+    }
+
+    private string FormatCountdown() => $"{SecondsLeft / 60}:{SecondsLeft % 60:D2}";
+
+    private async Task VerifyCode()
+    {
+        var code = string.Join("", Digits);
+        if (code.Length != 6) return;
+
+        IsVerifying = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/otp/verify", new { Email = UserEmail, Code = code });
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<OtpVerificationResult>();
+                if (result?.User != null)
+                {
+                    await OnVerificationCompleted.InvokeAsync(result.User);
+                    IsOpen = false;
+                }
+            }
+            else
+            {
+                ErrorMessage = "Invalid code. Please check your Gmail.";
+            }
+        }
+        finally
+        {
+            IsVerifying = false;
+        }
+    }
+
+    private async Task HandleResend()
+    {
+        await Http.PostAsJsonAsync("api/auth/otp/resend", new { Email = UserEmail });
+        SecondsLeft = 600;
+        Digits = new string[6] { "", "", "", "", "", "" };
+    }
+}

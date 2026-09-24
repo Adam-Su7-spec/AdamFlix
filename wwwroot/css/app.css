@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #7C5CFF;
+  --color-secondary: #00D4FF;
+  --color-background: #080B12;
+  --color-surface: #101521;
+}
+
+body {
+  background-color: var(--color-background);
+  color: #FFFFFF;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+.glow-primary {
+  box-shadow: 0 0 25px rgba(124, 92, 255, 0.45);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px rgba(0, 212, 255, 0.45);
+}

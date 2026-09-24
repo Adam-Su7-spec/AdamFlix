@@ -1,0 +1,6 @@
+{
+  "name": "AdamFlix – Modern Movie & TV Streaming Platform",
+  "description": "Watch the latest movies, trending TV shows, and cinematic originals in 4K Ultra HD on AdamFlix.tv.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
