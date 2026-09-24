@@ -22,8 +22,10 @@ WORKDIR /app
 # Copy published output from build stage
 COPY --from=build /app/publish ./
 
-# Create non-root user for improved container security
-RUN adduser --disabled-password --gecos "" app && chown -R app:app /app
+# Create non-root user for improved container security (skip if already exists)
+RUN if ! id -u app >/dev/null 2>&1; then \
+	  adduser --disabled-password --gecos "" app; \
+	fi && chown -R app:app /app
 USER app
 
 EXPOSE 80
