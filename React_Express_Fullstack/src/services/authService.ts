@@ -1,5 +1,6 @@
 import { User, EmailDispatchRecord } from '../types';
 import { AUTHORIZED_ADMIN_EMAIL } from '../context/AppContext';
+import { API_BASE } from './api';
 
 export interface GoogleAuthResponse {
   success: boolean;
@@ -66,7 +67,7 @@ export async function authenticateWithGoogle(params: {
   }
 
   try {
-    const res = await fetch('/api/auth/google/verify', {
+    const res = await fetch(`${API_BASE}/api/auth/google/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -124,7 +125,7 @@ export async function verifyOtpCode(params: {
   const cleanCode = (params.code || '').trim();
 
   try {
-    const res = await fetch('/api/auth/otp/verify', {
+    const res = await fetch(`${API_BASE}/api/auth/otp/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -184,7 +185,7 @@ export async function resendOtpCode(email: string): Promise<{ success: boolean; 
   const cleanEmail = (email || '').trim().toLowerCase();
 
   try {
-    const res = await fetch('/api/auth/otp/resend', {
+    const res = await fetch(`${API_BASE}/api/auth/otp/resend`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: cleanEmail })
@@ -218,7 +219,7 @@ export async function resendOtpCode(email: string): Promise<{ success: boolean; 
  */
 export async function fetchDispatchedEmail(email: string): Promise<EmailDispatchRecord | null> {
   try {
-    const res = await fetch(`/api/auth/otp/inspect?email=${encodeURIComponent(email)}`);
+    const res = await fetch(`${API_BASE}/api/auth/otp/inspect?email=${encodeURIComponent(email)}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data.record || null;
