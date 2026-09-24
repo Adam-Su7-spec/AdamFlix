@@ -66,11 +66,8 @@ try
             // If it's a RouteEndpoint, extract route pattern and HTTP methods
             if (ep is RouteEndpoint routeEp)
             {
-                var pattern = routeEp.RoutePattern.RawText ?? routeEp.RoutePattern?.ToString() ?? "[unknown pattern]";
-                var httpMeta = routeEp.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.Patterns.RoutePattern>();
-                // Try to get HTTP methods from metadata
-                var methodsMeta = routeEp.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.EndpointNameMetadata>();
-                logger.LogInformation("Registered route endpoint: Name='{Name}' Pattern='{Pattern}' Display='{DisplayName}'", routeEp.EndpointName, pattern, routeEp.DisplayName);
+                var pattern = routeEp.RoutePattern?.RawText ?? routeEp.RoutePattern?.ToString() ?? "[unknown pattern]";
+                logger.LogInformation("Registered route endpoint: DisplayName='{DisplayName}' Pattern='{Pattern}'", routeEp.DisplayName, pattern);
             }
             else
             {
